@@ -12,3 +12,9 @@ jobs:
     steps:
       - name: Check installed packages
         run: apt list --installed
+
+  yq:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if yq is installed
+        run: yq --help
