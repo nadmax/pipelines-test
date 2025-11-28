@@ -1,0 +1,14 @@
+name: main
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    name: Check installed packages
+    steps:
+      - name: Check installed packages
+        run: apt list --installed
