@@ -57,9 +57,9 @@ jobs:
       - name: Pull MegaLinter Docker image
         if: steps.cache-docker.outputs.cache-hit != 'true'
         run: |
-          docker pull oxsecurity/megalinter:v9
+          docker pull ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
           mkdir -p /tmp/mega-linter-docker
-          docker save oxsecurity/megalinter:v9 -o /tmp/mega-linter-docker/mega-linter-v9.tar
+          docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
 
       - name: Load MegaLinter Docker image from cache
         if: steps.cache-docker.outputs.cache-hit == 'true'
