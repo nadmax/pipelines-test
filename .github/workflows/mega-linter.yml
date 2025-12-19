@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache MegaLinter Docker image
         id: cache-docker
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /tmp/mega-linter-docker
           key: ${{ runner.os }}-megalinter-docker
@@ -53,7 +53,7 @@ jobs:
           mkdir -p /tmp/mega-linter-docker
           docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
 
-      - name: Save Primes
+      - name: Save Cache
         id: cache-docker-save
         uses: actions/cache/save@v4
         with:
