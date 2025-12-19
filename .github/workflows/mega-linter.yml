@@ -49,9 +49,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/mega-linter-docker
-          key: ${{ runner.os }}-mega-linter-9
+          key: ${{ runner.os }}-megalinter-docker
           restore-keys: |
-            ${{ runner.os }}-mega-linter-
+            ${{ runner.os }}-megalinter
 
       - name: Load MegaLinter Docker image from cache
         if: steps.cache-docker.outputs.cache-hit == 'true'
