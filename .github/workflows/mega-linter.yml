@@ -36,13 +36,6 @@ jobs:
         with:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-  
-      - name: Pull MegaLinter Docker image
-        if: steps.cache-docker.outputs.cache-hit != 'true'
-        run: |
-          docker pull ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
-          mkdir -p /tmp/mega-linter-docker
-          docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
 
       - name: Cache MegaLinter Docker image
         id: cache-docker
@@ -52,6 +45,20 @@ jobs:
           key: ${{ runner.os }}-megalinter-docker
           restore-keys: |
             ${{ runner.os }}-megalinter
+  
+      - name: Pull MegaLinter Docker image
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker pull ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
+          mkdir -p /tmp/mega-linter-docker
+          docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
+
+      - name: Save Primes
+        id: cache-docker-save
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/mega-linter-docker
+          key: ${{ steps.cache-docker.outputs.cache-primary-key }}
 
       - name: Load MegaLinter Docker image from cache
         if: steps.cache-docker.outputs.cache-hit == 'true'
