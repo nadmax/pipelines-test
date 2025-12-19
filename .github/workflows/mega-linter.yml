@@ -57,9 +57,9 @@ jobs:
       - name: Pull MegaLinter Docker image
         if: steps.cache-docker.outputs.cache-hit != 'true'
         run: |
-          docker pull nvuillam/mega-linter:v9
+          docker pull oxsecurity/megalinter:v9
           mkdir -p /tmp/mega-linter-docker
-          docker save nvuillam/mega-linter:v9 -o /tmp/mega-linter-docker/mega-linter-v9.tar
+          docker save oxsecurity/megalinter:v9 -o /tmp/mega-linter-docker/mega-linter-v9.tar
 
       - name: Load MegaLinter Docker image from cache
         if: steps.cache-docker.outputs.cache-hit == 'true'
