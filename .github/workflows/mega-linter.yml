@@ -41,15 +41,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          node-version: '22'
+          cache: 'npm'
 
       - name: Run MegaLinter via npx
         id: ml
@@ -67,7 +60,7 @@ jobs:
           # Run the mega-linter runner (non-interactive). Adjust version if needed.
           EXIT_CODE=0
           set +e
-          npx --yes mega-linter-runner@latest
+          npx --yes mega-linter-runner@v9
           EXIT_CODE=$?
           set -e
 
