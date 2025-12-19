@@ -1,5 +1,4 @@
 # .github/workflows/mega-linter.yml
-# (modified to run mega-linter-runner via npx instead of the Docker action)
 ---
 name: MegaLinter
 
@@ -43,6 +42,32 @@ jobs:
         with:
           node-version: '20'
 
+      # -------------------------
+      # Docker image caching
+      # -------------------------
+      - name: Cache MegaLinter Docker image
+        id: cache-docker
+        uses: actions/cache@v4
+        with:
+          path: /tmp/mega-linter-docker
+          key: ${{ runner.os }}-mega-linter-9
+          restore-keys: |
+            ${{ runner.os }}-mega-linter-
+
+      - name: Pull MegaLinter Docker image
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker pull nvuillam/mega-linter:v9
+          mkdir -p /tmp/mega-linter-docker
+          docker save nvuillam/mega-linter:v9 -o /tmp/mega-linter-docker/mega-linter-v9.tar
+
+      - name: Load MegaLinter Docker image from cache
+        if: steps.cache-docker.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/mega-linter-docker/mega-linter-v9.tar
+
+      # -------------------------
+      # Run MegaLinter
+      # -------------------------
       - name: Run MegaLinter via npx
         id: ml
         env:
@@ -56,24 +81,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Run the mega-linter runner (non-interactive). Adjust version if needed.
           EXIT_CODE=0
           set +e
           npx --yes mega-linter-runner@v9
           EXIT_CODE=$?
           set -e
 
-          # Detect if the linter applied changes in the working tree
           if [ -n "$(git status --porcelain)" ]; then
             echo "has_updated_sources=1" >> "$GITHUB_OUTPUT"
           else
             echo "has_updated_sources=0" >> "$GITHUB_OUTPUT"
           fi
 
-          # expose exit_code if you want to read it elsewhere
           echo "ml_exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-
-          # exit with the original linter exit code so job result remains meaningful
           exit $EXIT_CODE
 
       - name: Archive production artifacts
