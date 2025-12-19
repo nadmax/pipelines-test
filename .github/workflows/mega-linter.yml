@@ -66,7 +66,7 @@ jobs:
 
           # Run the mega-linter runner (non-interactive). Adjust version if needed.
           EXIT_CODE=0
-          npx --yes mega-linter-runner@latest --no-esm --custom-flavor-setup \
+          npx --yes mega-linter-runner@latest --custom-flavor-setup \
             --custom-flavor-linters ACTION_ACTIONLINT,COPYPASTE_JSCPD,MARKDOWN_MARKDOWNLINT,MARKDOWN_MARKDOWN_TABLE_FORMATTER,REPOSITORY_CHECKOV,REPOSITORY_DEVSKIM,REPOSITORY_DUSTILOCK,REPOSITORY_GIT_DIFF,REPOSITORY_GITL || EXIT_CODE=$?
 
           # Detect if the linter applied changes in the working tree
