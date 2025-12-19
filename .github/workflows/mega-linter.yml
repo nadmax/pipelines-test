@@ -36,15 +36,14 @@ jobs:
         with:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+  
+      - name: Pull MegaLinter Docker image
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker pull ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
+          mkdir -p /tmp/mega-linter-docker
+          docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # -------------------------
-      # Docker image caching
-      # -------------------------
       - name: Cache MegaLinter Docker image
         id: cache-docker
         uses: actions/cache@v4
@@ -54,114 +53,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mega-linter-
 
-      - name: Pull MegaLinter Docker image
-        if: steps.cache-docker.outputs.cache-hit != 'true'
-        run: |
-          docker pull ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
-          mkdir -p /tmp/mega-linter-docker
-          docker save ghcr.io/oxsecurity/megalinter-documentation:v9.2.0 -o /tmp/mega-linter-docker/mega-linter-v9.tar
-
       - name: Load MegaLinter Docker image from cache
         if: steps.cache-docker.outputs.cache-hit == 'true'
         run: docker load -i /tmp/mega-linter-docker/mega-linter-v9.tar
 
-      # -------------------------
-      # Run MegaLinter
-      # -------------------------
-      - name: Run MegaLinter via npx
+      - name: Run MegaLinter
         id: ml
-        env:
-          VALIDATE_ALL_CODEBASE: >-
-            ${{ github.event_name == 'push' &&
-               contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref) }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLY_FIXES: ${{ env.APPLY_FIXES }}
-          APPLY_FIXES_EVENT: ${{ env.APPLY_FIXES_EVENT }}
-          APPLY_FIXES_MODE: ${{ env.APPLY_FIXES_MODE }}
-        run: |
-          set -euo pipefail
-
-          EXIT_CODE=0
-          set +e
-          npx --yes mega-linter-runner@v9
-          EXIT_CODE=$?
-          set -e
-
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "has_updated_sources=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_updated_sources=0" >> "$GITHUB_OUTPUT"
-          fi
-
-          echo "ml_exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-          exit $EXIT_CODE
-
-      - name: Archive production artifacts
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: MegaLinter reports
-          include-hidden-files: "true"
-          path: |
-            megalinter-reports
-            mega-linter.log
-
-      - name: Set APPLY_FIXES_IF var
-        run: |
-          printf 'APPLY_FIXES_IF=%s\n' "${{
-            steps.ml.outputs.has_updated_sources == 1 &&
-            (
-              env.APPLY_FIXES_EVENT == 'all' ||
-              env.APPLY_FIXES_EVENT == github.event_name
-            ) &&
-            (
-              github.event_name == 'push' ||
-              github.event.pull_request.head.repo.full_name == github.repository
-            )
-          }}" >> "${GITHUB_ENV}"
-
-      - name: Set APPLY_FIXES_IF_* vars
-        run: |
-          printf 'APPLY_FIXES_IF_PR=%s\n' "${{
-            env.APPLY_FIXES_IF == 'true' &&
-            env.APPLY_FIXES_MODE == 'pull_request'
-          }}" >> "${GITHUB_ENV}"
-          printf 'APPLY_FIXES_IF_COMMIT=%s\n' "${{
-            env.APPLY_FIXES_IF == 'true' &&
-            env.APPLY_FIXES_MODE == 'commit' &&
-            (!contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref))
-          }}" >> "${GITHUB_ENV}"
-
-      - name: Create Pull Request with applied fixes
-        uses: peter-evans/create-pull-request@v7
-        id: cpr
-        if: env.APPLY_FIXES_IF_PR == 'true'
-        with:
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
-          commit-message: "[MegaLinter] Apply linters automatic fixes"
-          title: "[MegaLinter] Apply linters automatic fixes"
-          labels: bot
-
-      - name: Create PR output
-        if: env.APPLY_FIXES_IF_PR == 'true'
-        run: |
-          echo "PR Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "PR URL - ${{ steps.cpr.outputs.pull-request-url }}"
-
-      - name: Prepare commit
-        if: env.APPLY_FIXES_IF_COMMIT == 'true'
-        run: sudo chown -Rc $UID .git/
-
-      - name: Commit and push applied linter fixes
-        uses: stefanzweifel/git-auto-commit-action@v7
-        if: env.APPLY_FIXES_IF_COMMIT == 'true'
-        with:
-          branch: >-
-            ${{
-              github.event.pull_request.head.ref ||
-              github.head_ref ||
-              github.ref
-            }}
-          commit_message: "[MegaLinter] Apply linters fixes"
-          commit_user_name: megalinter-bot
-          commit_user_email: 129584137+megalinter-bot@users.noreply.github.com
+        run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:rw -v $(pwd):/tmp/lint:rw ghcr.io/oxsecurity/megalinter-documentation:v9.2.0
