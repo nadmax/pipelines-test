@@ -1,2 +1,2 @@
-# pipelines-test
-Test repository to play with pipelines
+# Actions
+Test repository to play with actions workflows
